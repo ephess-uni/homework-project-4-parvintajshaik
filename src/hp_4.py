@@ -17,17 +17,15 @@ def date_range(start, n):
     a list of of `n` datetime objects starting at `start` where each
     element in the list is one day after the previous."""
     if not isinstance(start, str) or not isinstance(n, int):
-        
+        raise TypeError()
+    if not isinstance(n, int):
         raise TypeError()
     
     x = []
     
     date_start = datetime.strptime(start, '%Y-%m-%d')
-    
     for i in range(n):
-        
         x.append(date_start + timedelta(days=i))
-        
     return x
 
 
