@@ -24,8 +24,8 @@ def date_range(start, n):
     x = []
     
     date_start = datetime.strptime(start, '%Y-%m-%d')
-    for i in range(n):
-        x.append(date_start + timedelta(days=i))
+    x = [date_start + timedelta(days=i) for i in range(n)]
+        
     return x
 
 
