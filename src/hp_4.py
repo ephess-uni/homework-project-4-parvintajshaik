@@ -40,46 +40,6 @@ def add_date_range(values, start_date):
     i = list(zip(x, values))
     return i
 
-def removeheaders(infile):
-    
-    fields = ("book_uid,isbn_13,patron_id,date_checkout,date_due,date_returned".
-              split(','))
-    
-    with open(infile, 'r') as f:
-        removehdr = DictReader(f, fieldnames=fields)
-        removehdr_rows = [row for row in removehdr]
-
-        removehdr_rows.pop(0)
-    
-    return removehdr_rows
-
-def fees_report1(infile, outfile):
-    """Calculates late fees per patron id and writes a summary report to
-    outfile."""
-    
-    DATE_FMT = '%m/%d/%Y'
-    textdata = removeheaders(infile)
-    fees = defaultdict(float)
-
-    for eachline in textdata:
-       
-        patron = eachline['patron_id']
-        due = datetime.strptime(eachline['date_due'], DATE_FMT)
-        returned = datetime.strptime(eachline['date_returned'], DATE_FMT)
-
-        ds = (returned - due).days
-
-        fees[patron]+= 0.25 * ds if ds > 0 else 0.0
-
-    out_list = [
-        {'patron_id': pn, 'late_fees': f'{fs:0.2f}'} for pn, fs in fees.items()
-    ]
-
-    with open(outfile, 'w') as f:
-        r = DictWriter(f, ['patron_id', 'late_fees'])
-        r.writeheader()
-        r.writerows(out_list)
-
 def fees_report(infile, outfile):
     
     infileheaders = ("book_uid,isbn_13,patron_id,date_checkout,date_due,date_returned".
