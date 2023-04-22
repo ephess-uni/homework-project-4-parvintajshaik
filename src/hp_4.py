@@ -8,23 +8,25 @@ from collections import defaultdict
 def reformat_dates(old_dates):
     """Accepts a list of date strings in format yyyy-mm-dd, re-formats each
     element to a format dd mmm yyyy--01 Jan 2001."""
+    
     newDates = [datetime.strptime(olddate, "%Y-%m-%d").strftime('%d %b %Y') for olddate in old_dates]
     return newDates
-
 
 def date_range(start, n):
     """For input date string `start`, with format 'yyyy-mm-dd', returns
     a list of of `n` datetime objects starting at `start` where each
     element in the list is one day after the previous."""
     if not isinstance(start, str) or not isinstance(n, int):
-        raise TypeError()
-    if not isinstance(n, int):
+        
         raise TypeError()
     
     x = []
     
     date_start = datetime.strptime(start, '%Y-%m-%d')
-    x = [date_start + timedelta(days=i) for i in range(n)]
+    
+    for i in range(n):
+        
+        x.append(date_start + timedelta(days=i))
         
     return x
 
@@ -33,10 +35,12 @@ def add_date_range(values, start_date):
     """Adds a daily date range to the list `values` beginning with
     `start_date`.  The date, value pairs are returned as tuples
     in the returned list."""
+    vls_len = len(values)
     x = date_range(start_date, len(values))
     i = list(zip(x, values))
+    return i
 
-def meth1(infile):
+def removeheaders(infile):
     
     fields = ("book_uid,isbn_13,patron_id,date_checkout,date_due,date_returned".
               split(','))
@@ -49,25 +53,26 @@ def meth1(infile):
     
     return removehdr_rows
 
-def fees_report(infile, outfile):
+def fees_report1(infile, outfile):
     """Calculates late fees per patron id and writes a summary report to
     outfile."""
+    
     DATE_FMT = '%m/%d/%Y'
-    textdata = meth1(infile)
+    textdata = removeheaders(infile)
     fees = defaultdict(float)
 
-    for el in textdata:
+    for eachline in textdata:
        
-        patron = el['patron_id']
-        due = datetime.strptime(el['date_due'], DATE_FMT)
-        returned = datetime.strptime(el['date_returned'], DATE_FMT)
+        patron = eachline['patron_id']
+        due = datetime.strptime(eachline['date_due'], DATE_FMT)
+        returned = datetime.strptime(eachline['date_returned'], DATE_FMT)
 
-        dayslate = (returned - due).days
+        ds = (returned - due).days
 
-        fees[patron]+= 0.25 * dayslate if dayslate > 0 else 0.0
+        fees[patron]+= 0.25 * ds if ds > 0 else 0.0
 
     out_list = [
-        {'patron_id': pyn, 'late_fees': f'{fsr:0.2f}'} for pyn, fsr in fees.items()
+        {'patron_id': pn, 'late_fees': f'{fs:0.2f}'} for pn, fs in fees.items()
     ]
 
     with open(outfile, 'w') as f:
@@ -75,6 +80,40 @@ def fees_report(infile, outfile):
         r.writeheader()
         r.writerows(out_list)
 
+def fees_report(infile, outfile):
+    
+    infileheaders = ("book_uid,isbn_13,patron_id,date_checkout,date_due,date_returned".
+              split(','))
+    
+    fees = defaultdict(float)
+    
+    with open(infile, 'r') as f:
+        lines = DictReader(f, fieldnames=infileheaders)
+        rows = [row for row in lines]
+
+    rows.pop(0)
+       
+    for each_line in rows:
+       
+        patronID = each_line['patron_id']
+        
+        date_due = datetime.strptime(each_line['date_due'], "%m/%d/%Y")
+        
+        date_returned = datetime.strptime(each_line['date_returned'], "%m/%d/%Y")
+        daysLate = (date_returned - date_due).days
+        
+        fees[patronID]+= 0.25 * daysLate if daysLate > 0 else 0.0
+        
+                
+    outfile_header = ['patron_id', 'late_fees']
+    finalIst = [
+        {'patron_id': pn, 'late_fees': f'{fs:0.2f}'} for pn, fs in fees.items()
+    ]
+    with open(outfile, 'w') as f:
+        
+        writer = DictWriter(f,['patron_id', 'late_fees'])
+        writer.writeheader()
+        writer.writerows(finalIst)
 
 # The following main selection block will only run when you choose
 # "Run -> Module" in IDLE.  Use this section to run test code.  The
@@ -90,12 +129,12 @@ if __name__ == '__main__':
     except ImportError:
         from util import get_data_file_path
 
-    # BOOK_RETURNS_PATH = get_data_file_path('book_returns.csv')
-    BOOK_RETURNS_PATH = get_data_file_path('book_returns_short.csv')
+    #BOOK_RETURNS_PATH = get_data_file_path('book_returns.csv')
+    #BOOK_RETURNS_PATH = get_data_file_path('book_returns_short.csv')
 
     OUTFILE = 'book_fees.csv'
 
-    fees_report(BOOK_RETURNS_PATH, OUTFILE)
+    fees_report('book_returns.csv', OUTFILE)
 
     # Print the data written to the outfile
     with open(OUTFILE) as f:
